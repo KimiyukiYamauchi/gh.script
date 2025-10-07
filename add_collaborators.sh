@@ -1,6 +1,6 @@
 #!/bin/bash
 
-REPO="KimiyukiYamauchi/prog1.py"  # 例: KimiyukiYamauchi/unix1.2025.y
+REPO="KimiyukiYamauchi/memo.react.tl"  # 例: KimiyukiYamauchi/unix1.2025.y
 PERMISSION="push"  # pull / push / admin
 
 while IFS= read -r user
