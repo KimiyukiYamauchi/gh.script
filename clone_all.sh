@@ -1,6 +1,6 @@
 #!/bin/bash
-# clone.txt にある GitHub リポジトリを順にクローンするスクリプト
-# クローン先フォルダ名は URL 内の「s24xxx」を抽出して使用する
+# clone.txt にある GitHub リポジトリを順に処理
+# 既存ディレクトリがあれば git pull、新規なら git clone
 
 # clone.txt が存在するか確認
 if [ ! -f "clone.txt" ]; then
@@ -8,38 +8,49 @@ if [ ! -f "clone.txt" ]; then
   exit 1
 fi
 
-# クローン先のベースディレクトリ（必要に応じて変更可）
+# クローン先ベースディレクトリ
 DEST_BASE="./repos"
 
-# ベースディレクトリ作成
+# ディレクトリ作成
 mkdir -p "$DEST_BASE"
 
-# 1行ずつ読み込んで処理
+# 各URLを処理
 while read -r repo; do
   # 空行スキップ
   if [ -z "$repo" ]; then
     continue
   fi
 
-  # URL から学籍番号 (s24xxx) を抽出
+  # URLから学籍番号 (s24xxx) を抽出
   student_id=$(echo "$repo" | grep -oE 's24[0-9]{3}')
   
-  # 抽出できなければスキップ
   if [ -z "$student_id" ]; then
     echo "⚠️ 学籍番号が抽出できません: $repo"
     continue
   fi
 
   target_dir="$DEST_BASE/$student_id"
-  echo "🌀 Cloning $repo → $target_dir"
-  
-  git clone "$repo" "$target_dir"
 
-  if [ $? -ne 0 ]; then
-    echo "❌ クローン失敗: $repo"
+  if [ -d "$target_dir/.git" ]; then
+    echo "🔄 既存ディレクトリ検出: $student_id → git pull 実行中..."
+    (
+      cd "$target_dir" && git pull
+    )
+    if [ $? -eq 0 ]; then
+      echo "✅ 更新完了: $student_id"
+    else
+      echo "❌ 更新失敗: $student_id"
+    fi
   else
-    echo "✅ クローン完了: $student_id"
+    echo "🌀 新規クローン: $repo → $target_dir"
+    git clone "$repo" "$target_dir"
+    if [ $? -eq 0 ]; then
+      echo "✅ クローン完了: $student_id"
+    else
+      echo "❌ クローン失敗: $student_id"
+    fi
   fi
+
 done < clone.txt
 
-echo "🎉 すべてのクローン処理が完了しました。"
+echo "🎉 すべての処理が完了しました。"
