@@ -16,12 +16,27 @@ while read -r repo; do
   # 空行はスキップ
   [ -z "$repo" ] && continue
 
-  # URLから学籍番号 (s24xxx) を抽出
-  student_id=$(echo "$repo" | grep -oE 's24[0-9]{3}')
-  if [ -z "$student_id" ]; then
-    echo "⚠️ 学籍番号(s24xxx)を抽出できません: $repo"
-    continue
-  fi
+  # 行頭が # のコメント行はスキップ
+  [[ "$repo" =~ ^# ]] && continue
+
+# 学籍番号の元になる 25xxx を抽出
+raw_id=$(echo "$repo" | grep -oE '[0-9]{5}')
+
+if [[ -z "$raw_id" ]]; then
+  echo "⚠️ 学籍番号(25xxx)を抽出できません: $repo"
+  continue
+fi
+
+# 既に n または s が付いている形式もチェック（例: s25001, n25002）
+prefixed_id=$(echo "$repo" | grep -oE '[ns]25[0-9]{3}')
+
+if [[ -n "$prefixed_id" ]]; then
+  # そのまま使う
+  student_id="$prefixed_id"
+else
+  # n が付いていない場合は n を付与
+  student_id="n$raw_id"
+fi
 
   target_dir="$DEST_BASE/$student_id"
 
